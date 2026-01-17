@@ -1,8 +1,8 @@
 import axios from './axios'
 import fetchRequest from './fetch'
 
-// export const SERVER_URL = 'http://localhost:5000'
-export const SERVER_URL = (import.meta.env.MODE === 'development') ? '/api' : 'https://server.pptist.cn'
+// 使用当前项目的后端API
+export const SERVER_URL = (import.meta.env.MODE === 'development') ? 'http://localhost:5001' : ''
 
 interface ImageSearchPayload {
   query: string;
@@ -47,7 +47,7 @@ export default {
     language,
     model,
   }: AIPPTOutlinePayload): Promise<any> {
-    return fetchRequest(`${SERVER_URL}/tools/aippt_outline`, {
+    return fetchRequest(`${SERVER_URL}/api/tools/aippt_outline`, {
       method: 'POST',
       body: JSON.stringify({
         content,
@@ -64,7 +64,7 @@ export default {
     style,
     model,
   }: AIPPTPayload): Promise<any> {
-    return fetchRequest(`${SERVER_URL}/tools/aippt`, {
+    return fetchRequest(`${SERVER_URL}/api/tools/aippt`, {
       method: 'POST',
       body: JSON.stringify({
         content,
@@ -85,7 +85,7 @@ export default {
       body: JSON.stringify({
         content,
         command,
-        model: 'GLM-4.5-Flash',
+        model: 'qwen-plus',
         stream: true,
       }),
     })

@@ -1,3 +1,15 @@
+> **⚠️ 这是一个修改版本 (Modified Version)**
+>
+> 本仓库是基于 [PPTist](https://github.com/pipipi-pikachu/PPTist) 项目的修改版本，用于整合到 AI 教案生成系统中。
+>
+> **许可证**: 本项目继续遵循 AGPL-3.0 协议。
+>
+> 📋 [修改说明文档](./MODIFICATION.md) | 📄 [MODIFICATION_README.md](./MODIFICATION_README.md)
+>
+> ⚠️ **重要**: 如果您使用此代码，必须遵守 AGPL-3.0 协议的所有条款。详见 [LICENSE](./LICENSE)
+
+---
+
 <p align="center">
     <img src='/public/logo.png' />
 </p>

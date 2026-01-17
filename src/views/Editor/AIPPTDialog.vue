@@ -54,13 +54,12 @@
         </div>
         <div class="config-item">
           <div class="label">模型：</div>
-          <Select 
+          <Select
             class="config-content"
             style="width: 190px;"
             v-model:value="model"
             :options="[
-              { label: 'GLM-4.5-Flash', value: 'GLM-4.5-Flash' },
-              { label: 'Doubao-Seed-1.6-flash', value: 'ark-doubao-seed-1.6-flash' },
+              { label: 'qwen-plus', value: 'qwen-plus' },
             ]"
           />
         </div>
@@ -151,7 +150,7 @@ const loading = ref(false)
 const outlineCreating = ref(false)
 const overwrite = ref(true)
 const step = ref<'setup' | 'outline' | 'template'>('setup')
-const model = ref('GLM-4.5-Flash')
+const model = ref('qwen-plus')
 const outlineRef = useTemplateRef<HTMLElement>('outlineRef')
 const inputRef = useTemplateRef<InstanceType<typeof Input>>('inputRef')
 
@@ -200,7 +199,8 @@ const createOutline = async () => {
 
   const reader: ReadableStreamDefaultReader = stream.body.getReader()
   const decoder = new TextDecoder('utf-8')
-  
+  let buffer = ''
+
   const readStream = () => {
     reader.read().then(({ done, value }) => {
       if (done) {
@@ -209,9 +209,24 @@ const createOutline = async () => {
         outlineCreating.value = false
         return
       }
-  
-      const chunk = decoder.decode(value, { stream: true })
-      outline.value += chunk
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.slice(6).trim()
+          if (jsonStr === '[DONE]') continue
+          try {
+            const data = JSON.parse(jsonStr)
+            const content = data.content || ''
+            outline.value += content
+          } catch (e) {
+            // Ignore parse errors for incomplete chunks
+          }
+        }
+      }
 
       if (outlineRef.value) {
         outlineRef.value.scrollTop = outlineRef.value.scrollHeight + 20
@@ -251,27 +266,77 @@ const createPPT = async (template?: { slides: Slide[], theme: SlideTheme }) => {
 
   const reader: ReadableStreamDefaultReader = stream.body.getReader()
   const decoder = new TextDecoder('utf-8')
-  
+  let buffer = ''
+  let jsonBuffer = ''
+
+  // 尝试从buffer中解析完整的JSON对象
+  const tryParseJSON = (buffer: string): { parsed: any[], remaining: string } => {
+    const text = buffer.replace(/```json/g, '').replace(/```/g, '').trim()
+    const lines = text.split('\n')
+    const parsed: any[] = []
+    let remaining = ''
+    let incompleteLine = ''
+
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+      if (!trimmedLine) continue
+
+      // 如果正在累积不完整的JSON，或者这行可能是JSON的开始
+      if (incompleteLine || trimmedLine.startsWith('{') || trimmedLine.startsWith('[')) {
+        incompleteLine += trimmedLine
+        try {
+          const slide: AIPPTSlide = JSON.parse(incompleteLine)
+          parsed.push(slide)
+          incompleteLine = ''
+        } catch (e) {
+          // JSON不完整，添加空格继续累积（换行会导致JSON解析失败）
+          incompleteLine += ' '
+        }
+      }
+    }
+
+    remaining = incompleteLine.trim()
+    return { parsed, remaining }
+  }
+
   const readStream = () => {
     reader.read().then(({ done, value }) => {
       if (done) {
+        // 流结束，尝试解析剩余内容
+        const { parsed: remainingSlides } = tryParseJSON(jsonBuffer)
+        for (const slide of remainingSlides) {
+          AIPPT(templateSlides, [slide])
+        }
+
         loading.value = false
         mainStore.setAIPPTDialogState(false)
         slidesStore.setTheme(templateTheme)
         return
       }
-  
-      const chunk = decoder.decode(value, { stream: true })
-      try {
-        const text = chunk.replace('```json', '').replace('```', '').trim()
-        if (text) {
-          const slide: AIPPTSlide = JSON.parse(chunk)
-          AIPPT(templateSlides, [slide])
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const jsonStr = line.slice(6).trim()
+          if (jsonStr === '[DONE]') continue
+          try {
+            const data = JSON.parse(jsonStr)
+            const content = data.content || ''
+            jsonBuffer += content
+
+            // 尝试解析完整的JSON对象
+            const { parsed, remaining } = tryParseJSON(jsonBuffer)
+            for (const slide of parsed) {
+              AIPPT(templateSlides, [slide])
+            }
+            jsonBuffer = remaining
+          } catch (e) {
+            // Ignore parse errors for incomplete chunks
+          }
         }
-      }
-      catch (err) {
-        // eslint-disable-next-line
-        console.error(err)
       }
 
       readStream()

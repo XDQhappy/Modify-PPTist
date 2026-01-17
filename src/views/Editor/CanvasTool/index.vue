@@ -51,16 +51,6 @@
         <FileInput style="height: 100%;" @change="files => insertImageElement(files)">
           <div class="group-btn-main"><IconPicture class="icon" /> <span class="text">图片</span></div>
         </FileInput>
-        
-        <Popover trigger="click" v-model:value="imageMenuVisible" style="height: 100%;" :offset="10">
-          <template #content>
-            <FileInput @change="files => { insertImageElement(files); imageMenuVisible = false }">
-              <PopoverMenuItem center><IconUpload class="icon" /> 上传图片</PopoverMenuItem>
-            </FileInput>
-            <PopoverMenuItem center @click="openImageLibPanel(); imageMenuVisible = false"><IconPicture class="icon" /> 在线图库</PopoverMenuItem>
-          </template>
-          <IconDown class="arrow" />
-        </Popover>
       </div>
       <Popover trigger="click" v-model:value="linePoolVisible" :offset="10">
         <template #content>
@@ -206,7 +196,6 @@ const mediaInputVisible = ref(false)
 const latexEditorVisible = ref(false)
 const textTypeSelectVisible = ref(false)
 const shapeMenuVisible = ref(false)
-const imageMenuVisible = ref(false)
 const moreVisible = ref(false)
 
 // 绘制文字范围
@@ -258,11 +247,6 @@ const toggleNotesPanel = () => {
 // 打开符号面板
 const toggleSymbolPanel = () => {
   mainStore.setSymbolPanelState(!showSymbolPanel.value)
-}
-
-// 打开图库面板
-const openImageLibPanel = () => {
-  mainStore.setImageLibPanelState(true)
 }
 </script>
 

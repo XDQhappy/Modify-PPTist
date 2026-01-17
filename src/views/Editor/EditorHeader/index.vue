@@ -92,9 +92,6 @@
       <div class="menu-item" v-tooltip="'导出'" @click="setDialogForExport('pptx')">
         <IconDownload class="icon" />
       </div>
-      <a class="github-link" v-tooltip="'Copyright © 2020-PRESENT pipipi-pikachu'" href="https://github.com/pipipi-pikachu/PPTist" target="_blank">
-        <div class="menu-item"><IconGithub class="icon" /></div>
-      </a>
     </div>
 
     <Drawer
@@ -361,9 +358,5 @@ const openAIPPTDialog = () => {
       background-color: #f1f1f1;
     }
   }
-}
-.github-link {
-  display: inline-block;
-  height: 30px;
 }
 </style>
